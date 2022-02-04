@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+  <script src="https://cdn.socket.io/3.1.1/socket.io.min.js" integrity="sha384-gDaozqUvc4HTgo8iZjwth73C6dDDeOJsAgpxBcMpZYztUfjHXpzrpdrHRdVp8ySO" crossorigin="anonymous"></script>
+</head>
+<body>
+  <input id="username" type="text" autofocus placeholder="Имя писать сюда">
+  <input id="input" type="text" autofocus>
+  <button id="button">Send</button>
+  <div id="messages"></div>
+<script>
+  const socket = io('localhost:5555');
+  const messageBlock = document.querySelector('#messages');
+  const input = document.querySelector('#input');
+  const username = document.querySelector('#username');
+  const button = document.querySelector('#button');
+
+
+  button.addEventListener('click', () => {
+     const data = {
+         username: username.value,
+         message: input.value,
+     };
+
+     socket.emit('connected', data);
+     socket.emit('client-msg', data);
+     socket.emit('disconnected', data);
+
+     username.disabled = true; // отключение инпута имени пользователя после "регистрации"
+     input.value = ''; // отчистка инпута после отправки сообщения
+
+  });
+
+  socket.on('connect', () => {
+      console.log('connected');
+      messageBlock.insertAdjacentHTML('afterbegin',
+          `<div>
+              <span>Привет! Как тебя зовут?</span>
+          </div>`
+      )
+      socket.on('connected', (data) => {
+          messageBlock.insertAdjacentHTML('afterbegin',
+              `<div>
+                  <span>${data.username}, с подключением! </span>
+                  <span>Теперь в системе ${data.allClients} пользователей! </span>
+              </div>`
+          )
+      });
+  });
+  // рисуем на сайте сообщения
+  socket.on('server-msg', (data) => {
+      messageBlock.insertAdjacentHTML('afterbegin',
+          `<div>
+              <span>${data.username}: </span>
+              <span>${data.message}</span>
+          </div>`
+      )
+  })
+  socket.on('disconnect', () => {
+      console.log('disconnected');
+
+      socket.on('disconnection', (data) => {
+          messageBlock.insertAdjacentHTML('afterbegin',
+              `<div>
+                  <span>${data.username}, с отключением! </span>
+              </div>`
+          )
+      });
+  });
+</script>
+</body>
+</html>
